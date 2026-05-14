@@ -261,12 +261,21 @@ class Predictor:
             consensus_boost = 0
 
         # ── 6b. Volume Confirmation Expert Rule ────────────────────────────────
-        # A breakout or reversal without volume is a "fakeout"
+        # A breakout or reversal without volume is a "fakeout", high volume indicates operator interest
         vol_ratio = ta_results.get("volume", {}).get("ratio", 1.0)
-        if final_dir != "NEUTRAL" and vol_ratio < 0.8:
-            # Dampen confidence if volume is low
-            logger.warning(f"Low volume ({vol_ratio:.1f}x) detected for {final_dir} signal -> Dampening confidence")
-            raw_score = 50 + (raw_score - 50) * 0.6
+        if final_dir != "NEUTRAL":
+            if vol_ratio < 0.8:
+                # Dampen confidence if volume is low
+                logger.warning(f"Low volume ({vol_ratio:.1f}x) detected for {final_dir} signal -> Dampening confidence")
+                raw_score = 50 + (raw_score - 50) * 0.6
+            elif vol_ratio > 1.5:
+                # Boost confidence if volume is high (operators are interested)
+                logger.info(f"High volume ({vol_ratio:.1f}x) detected -> Operators are interested. Boosting confidence.")
+                boost = min(15, (vol_ratio - 1.0) * 10)
+                if final_dir == "BUY":
+                    raw_score = min(100, raw_score + boost)
+                else:
+                    raw_score = max(0, raw_score - boost)
             
         # Apply consensus boost
         if final_dir == "BUY":
@@ -430,6 +439,11 @@ class Predictor:
             reasoning.append(f"AI ML: {ml_dir} signal (Random Forest probability: {ml_score:.1f}%)")
         if ta_dir != "NEUTRAL":
             reasoning.append(f"TA Composite: {ta_dir} signal ({ta_score:.0f}% score)")
+            
+        if vol_ratio > 1.5:
+            reasoning.append(f"Operator Interest: High trading volume ({vol_ratio:.1f}x average) confirms institutional participation.")
+        elif vol_ratio < 0.8:
+            reasoning.append(f"Volume Warning: Low trading volume ({vol_ratio:.1f}x average) indicates lack of institutional interest.")
             
         ema = ta_results.get("ema", {})
         if ema:
