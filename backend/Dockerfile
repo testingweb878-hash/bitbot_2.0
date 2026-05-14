@@ -11,12 +11,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
-COPY backend/requirements.txt ./
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 RUN python -m textblob.download_corpora
 
 # Copy the rest of the backend code
-COPY backend/ .
+COPY . .
 
 # Expose the port FastAPI runs on
 EXPOSE 8000
