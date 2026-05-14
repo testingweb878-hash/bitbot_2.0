@@ -3,7 +3,13 @@ import { useEffect, useRef } from 'react';
 import { useStore } from '@/lib/store';
 
 const getWsUrl = () => {
-  if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
+  let wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+  if (wsUrl) {
+    if (!wsUrl.endsWith('/ws')) {
+      wsUrl = wsUrl.endsWith('/') ? wsUrl + 'ws' : wsUrl + '/ws';
+    }
+    return wsUrl;
+  }
   if (process.env.NEXT_PUBLIC_API_URL) {
     let apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (apiUrl.endsWith('/')) apiUrl = apiUrl.slice(0, -1);
